@@ -6,3 +6,6 @@ easyocr
 opencv-python-headless
 Pillow
 numpy
+duckduckgo-search
+pypdf
+streamlit-mic-recorder
