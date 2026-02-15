@@ -2,3 +2,7 @@ openai
 streamlit
 gTTS
 python-docx
+easyocr
+opencv-python-headless
+Pillow
+numpy
