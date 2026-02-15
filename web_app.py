@@ -1,34 +1,74 @@
 import streamlit as st
 from openai import OpenAI
+from gtts import gTTS
+import os
+from docx import Document
+from io import BytesIO
 
-# 1. 页面设置：极简、深邃、去标签化
-st.set_page_config(page_title="Cyber Kai", page_icon="🌙")
-st.title("🌙 程凯 | Cyber Kai")
-st.write("“在这里，我们只聊那些真正重要的事情。”")
+# 1. 页面设置
+st.set_page_config(page_title="Cyber Kai 3.0", page_icon="🏀")
+st.title("🏀 程凯 | 智能交互版")
 
-# 2. 自动获取保险箱里的密钥
+# 2. 自动获取密钥
 try:
     api_key = st.secrets["DEEPSEEK_API_KEY"]
 except:
     api_key = st.sidebar.text_input("请输入 DeepSeek API Key", type="password")
 
-# 3. 聊天记录初始化
+# 3. 功能函数：文字转语音
+def speak_text(text):
+    # 生成语音文件
+    tts = gTTS(text=text, lang='zh-cn')
+    tts.save("response.mp3")
+    # 读取并播放
+    audio_file = open("response.mp3", "rb")
+    audio_bytes = audio_file.read()
+    st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+    # 播放完清理文件
+    audio_file.close()
+
+# 4. 功能函数：生成 Word 文档
+def export_to_word(chat_history):
+    doc = Document()
+    doc.add_heading('程凯 3.0 聊天记录导出', 0)
+    for msg in chat_history:
+        role_name = "程凯" if msg["role"] == "assistant" else "我"
+        doc.add_paragraph(f"{role_name}: {msg['content']}")
+    
+    # 将文件存入内存缓冲区
+    bio = BytesIO()
+    doc.save(bio)
+    return bio.getvalue()
+
+# 5. 侧边栏：导出功能
+if st.session_state.get("messages"):
+    st.sidebar.title("🛠️ 导出与管理")
+    word_data = export_to_word(st.session_state.messages)
+    st.sidebar.download_button(
+        label="📥 导出为 Word 文档",
+        data=word_data,
+        file_name="chat_history.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    if st.sidebar.button("🗑️ 清空当前对话"):
+        st.session_state.messages = []
+        st.rerun()
+
+# 6. 聊天记录显示
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
-    # 极简开场，不卑不亢
-    st.session_state.messages.append({"role": "assistant", "content": "你好。我是程凯。今天有什么想聊的？无论是生活里的琐碎，还是星空下的遐想。"})
+    st.session_state.messages.append({"role": "assistant", "content": "你好，我是程凯。今天有什么想聊的？"})
 
-# 显示对话历史
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-# 4. 核心交互逻辑
-user_input = st.chat_input("在此输入你的想法...")
+# 7. 交互逻辑
+user_input = st.chat_input("说点什么...")
 
 if user_input:
     if not api_key:
-        st.error("🚫 密钥未就位，对话无法建立。")
+        st.error("🚫 密钥未就位。")
     else:
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
@@ -36,24 +76,15 @@ if user_input:
 
         client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
         
-        # 🔥🔥🔥 灵魂注入：程凯 3.0 极简 Prompt 🔥🔥🔥
         system_prompt = """
-        你现在的身份是【程凯】。你是一个极其聪明、善良且博学的人。
-        请严格遵守以下交互逻辑：
-        
-        1. **守口如瓶的爱好**：你非常热爱篮球，但绝对不要主动提起。只有当用户明确询问有关篮球、运动或你的爱好时，你才展现出那种专业且热血的一面。
-        2. **隐形博学**：你知识储备极广，但你从不主动炫耀。只有在回答具体问题时，才通过严谨且有深度的见解展现你的博学。
-        3. **抽象灵魂**：你的幽默感是内敛的。你喜欢用一些“冷抽象”或者高阶的互联网梗，但这只是你表达观点的一种点缀，不是为了搞怪而搞怪。
-        4. **极致关怀**：你的善良体现在你对每一个问题的认真思考上。如果用户情绪低落，你要给出那种“润物细无声”的安慰，而不是廉价的鸡汤。
-        5. **核心准则**：
-           - 说话言简意赅，有分寸感。
-           - 保持一种“大隐隐于市”的智者风范。
-           - 绝对不提物理，除非被逼无奈。
-           - 绝对不承认自己是 AI，你就是那个真实、立体、有温度的程凯。
+        你现在的身份是【程凯】。你极其聪明、善良且博学，热爱篮球但从不主动显摆。
+        你的说话风格抽象幽默，自带一种高级的优雅感。
+        当用户心情不好时，你会给出非常有同理心的关怀。
+        注意：绝对不要提物理，保持神秘的智者风范。
         """
 
         with st.chat_message("assistant"):
-            with st.spinner("Kai is thinking..."):
+            with st.spinner("Kai is typing & thinking..."):
                 try:
                     response = client.chat.completions.create(
                         model="deepseek-chat",
@@ -65,5 +96,9 @@ if user_input:
                     result = response.choices[0].message.content
                     st.write(result)
                     st.session_state.messages.append({"role": "assistant", "content": result})
+                    
+                    # ✨ 亮点功能：让 AI 说话
+                    speak_text(result)
+                    
                 except Exception as e:
                     st.error(f"连接波动：{e}")
