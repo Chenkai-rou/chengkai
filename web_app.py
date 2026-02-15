@@ -1,42 +1,4 @@
 import streamlit as st
-# ... 其他 import 保持不变 ...
-
-# 1. 注入自定义 CSS 皮肤 (放在最前面)
-st.markdown("""
-    <style>
-    /* 整体背景与文字颜色 */
-    .stApp {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
-    /* 侧边栏样式 */
-    [data-testid="stSidebar"] {
-        background-image: linear-gradient(#2e333d, #0e1117);
-        border-right: 1px solid #4f4f4f;
-    }
-    /* 输入框霓虹边框效果 */
-    .stTextInput > div > div > input {
-        border: 1px solid #00ffcc !important;
-        box-shadow: 0 0 10px #00ffcc;
-    }
-    /* 按钮样式优化 */
-    .stButton > button {
-        background-color: #00ffcc !important;
-        color: #000000 !important;
-        border-radius: 20px;
-        font-weight: bold;
-        transition: 0.3s;
-    }
-    .stButton > button:hover {
-        box-shadow: 0 0 20px #00ffcc;
-        transform: scale(1.05);
-    }
-    </style>
-    """, unsafe_allow_stdio=True, unsafe_allow_html=True)
-
-# 2. 页面设置
-st.set_page_config(page_title="Cyber Kai 5.0", page_icon="🌙", layout="wide")
-# ... 后续逻辑保持不变 ...
 from openai import OpenAI
 from gtts import gTTS
 from docx import Document
